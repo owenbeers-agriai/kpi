@@ -1,6 +1,8 @@
 import requests
 from django.conf import settings
 from typing import Optional
+
+from django.contrib.auth.models import User
 from veritree.constants import META_VERITREE_APP_VERSION
 from veritree.models import VeritreeOAuth2
 from veritree.question_blocks.constants import (
@@ -167,5 +169,13 @@ def lookup_species_ids_for_org(org_id: int, access_token: str):
         return []
 
 def get_user_id(submission_data: dict) -> Optional[int]:
-    #TODO: Fill this in. Placeholder for now
+    possible_username = submission_data.get('username', '')
+    potential_user_matches = User.objects.filter(username=possible_username)
+    if potential_user_matches.exists():
+        try:
+            user_id = potential_user_matches[0].social_auth.get(provider=VeritreeOAuth2.name).extra_data['veritree_id']
+            return user_id
+        except Exception as e:
+            # Do nothing if we didn't find it for now
+            pass
     return None
